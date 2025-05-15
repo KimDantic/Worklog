@@ -72,3 +72,29 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(["Overview", "Hours", "Entrie
 with tab1:
     st.subheader("Preview of Filtered Data (First 100 Rows)")
     st.dataframe(combined_df.head(100), use_container_width=True)
+
+    # Additional Bar Graph
+    st.subheader("User Task Count Visualization")
+    user_task_counts = combined_df['Full_Name'].value_counts().reset_index()
+    user_task_counts.columns = ['Full_Name', 'Task Count']
+
+    fig_bar = px.bar(
+        user_task_counts, 
+        x='Full_Name', 
+        y='Task Count', 
+        color='Task Count',
+        color_continuous_scale='Blues',
+        title="Task Count by User"
+    )
+
+    fig_bar.update_layout(
+        plot_bgcolor='#000000',
+        paper_bgcolor='#000000',
+        font_color='#FFFFFF',
+        xaxis_title='Users',
+        yaxis_title='Task Count',
+        title_font_size=18,
+        title_x=0.5
+    )
+
+    st.plotly_chart(fig_bar, use_container_width=True)
