@@ -26,10 +26,18 @@ st.markdown(
     """
     <style>
     body {background-color: #000000; color: #FFFFFF;}
-    .stSidebar {background-color: #000000;}
-    .stTabs > div {background-color: #000000;}
+    .stSidebar {background-color: #000000; color: #FFFFFF;} /* Sidebar background and text */
+    .stTabs > div {background-color: #000000; color: #FFFFFF;}
     .stMarkdown {color: #FFFFFF;}
-    .css-18e3th9 {background-color: #000000;}
+    .css-18e3th9 {background-color: #000000; color: #FFFFFF;} /* Main content background */
+    .st-bb {background-color: #000000; color: #FFFFFF;}
+    .st-b7 {color: #FFFFFF;}
+    div[data-baseweb="tab"] > div[role="tablist"] > button[role="tab"] {
+        color: #FFFFFF;
+    }
+    div[data-baseweb="tab"] > div[role="tablist"] > button[role="tab"][aria-selected="true"]{
+        color: #FFFFFF;
+    }
     </style>
     """,
     unsafe_allow_html=True
@@ -79,9 +87,9 @@ with tab1:
     user_task_counts.columns = ['Full_Name', 'Task Count']
 
     fig_bar = px.bar(
-        user_task_counts, 
-        x='Full_Name', 
-        y='Task Count', 
+        user_task_counts,
+        x='Full_Name',
+        y='Task Count',
         color='Task Count',
         color_continuous_scale='Blues',
         title="Task Count by User"
