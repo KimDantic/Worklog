@@ -22,14 +22,8 @@ warnings.filterwarnings("ignore", message="Converting to PeriodArray/Index repre
 # Streamlit page configuration
 st.set_page_config(page_title="Task Dashboard", layout="wide")
 
-# Theme toggle
-theme = st.sidebar.radio("Select Theme", ["Dark", "Light"], index=0)
-
-# Applying theme
-if theme == "Dark":
-    st.markdown("<style>body {background-color: #121212; color: #FFFFFF;}</style>", unsafe_allow_html=True)
-else:
-    st.markdown("<style>body {background-color: #FFFFFF; color: #000000;}</style>", unsafe_allow_html=True)
+# Applying dark theme directly
+st.markdown("<style>body {background-color: #121212; color: #FFFFFF;}</style>", unsafe_allow_html=True)
 
 # Load data
 @st.cache_data
@@ -59,47 +53,22 @@ def load_data():
 # Load the data
 combined_df = load_data()
 
-# Sidebar filters
-st.sidebar.header("Filters")
-filter_type = st.sidebar.multiselect("Filter Type", ["Date", "Category", "Full Name", "Search Term"], default=["Search Term"])
+# Redesigned Sidebar Filters
+st.sidebar.header("🔍 Filter Options")
+st.sidebar.divider()
+filter_type = st.sidebar.multiselect("🔖 Select Filter Type", ["Date", "Category", "Full Name", "Search Term"], default=["Search Term"])
 
-if "Date" in filter_type:
-    date_filter = st.sidebar.date_input("Select Date Range", [])
-    if len(date_filter) == 2:
-        combined_df = combined_df[(combined_df['started_at'] >= pd.to_datetime(date_filter[0])) & (combined_df['started_at'] <= pd.to_datetime(date_filter[1]))]
+# Enhanced Tabs for Visualization
+st.subheader("📊 Data Visualization")
+tab1, tab2 = st.tabs(["Word Cloud", "Common Words Visualization"])
 
-if "Category" in filter_type:
-    search_term = st.sidebar.text_input("Search Category")
-    if search_term:
-        combined_df = combined_df[combined_df['task_processed'].str.contains(search_term, case=False)]
-
-if "Full Name" in filter_type:
-    full_name_filter = st.sidebar.multiselect("Filter by Full Name", options=combined_df['Full_Name'].unique())
-    if full_name_filter:
-        combined_df = combined_df[combined_df['Full_Name'].isin(full_name_filter)]
-
-if "Search Term" in filter_type:
-    search_term = st.sidebar.text_input("Search Task")
-    if search_term:
-        combined_df = combined_df[combined_df['task_processed'].str.contains(search_term, case=False)]
-
-# Visualization type
-st.subheader("Word Visualization")
-vis_type = st.selectbox("Select Visualization Type", ["Word Cloud", "Bar Chart", "Pie Chart"], index=0)
-
-if vis_type == "Word Cloud":
+with tab1:
     all_words = ' '.join(combined_df['task_processed'].tolist())
-    wordcloud = WordCloud(width=800, height=400, background_color='black' if theme == "Dark" else 'white').generate(all_words)
+    wordcloud = WordCloud(width=800, height=400, background_color='black').generate(all_words)
     st.image(wordcloud.to_array())
 
-elif vis_type == "Bar Chart":
+with tab2:
     word_counts = Counter(' '.join(combined_df['task_processed']).split()).most_common(20)
     df_plot = pd.DataFrame(word_counts, columns=['Word', 'Count'])
-    fig = px.bar(df_plot, x='Word', y='Count', title="Top 20 Most Common Words")
-    st.plotly_chart(fig)
-
-elif vis_type == "Pie Chart":
-    word_counts = Counter(' '.join(combined_df['task_processed']).split()).most_common(10)
-    df_plot = pd.DataFrame(word_counts, columns=['Word', 'Count'])
-    fig = px.pie(df_plot, names='Word', values='Count', title="Top 10 Most Common Words")
+    fig = px.treemap(df_plot, path=['Word'], values='Count', title="Top 20 Most Common Words")
     st.plotly_chart(fig)
