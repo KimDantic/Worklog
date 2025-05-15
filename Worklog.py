@@ -7,7 +7,7 @@ import os
 try:
     import matplotlib.pyplot as plt
 except ImportError:
-    st.error("Matplotlib is not installed. Run: pip install matplotlib")
+    plt = None
 
 st.title("GitHub CSV Data Visualizer")
 
@@ -52,7 +52,7 @@ try:
             st.dataframe(data)
 
             # Visualization
-            if 'plt' in globals():
+            if plt:
                 st.write("### Data Visualization")
                 category_counts = data['label'].value_counts()
                 fig, ax = plt.subplots()
@@ -62,7 +62,7 @@ try:
                 ax.set_ylabel('Count')
                 st.pyplot(fig)
             else:
-                st.error("Matplotlib is not available for visualization.")
+                st.warning("Matplotlib is not installed. Please run: pip install matplotlib")
 
         else:
             st.error(f"Missing columns: {required_columns}")
