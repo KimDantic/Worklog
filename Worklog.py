@@ -13,7 +13,7 @@ branch = "main"
 token = os.getenv("GITHUB_TOKEN")  # Ensure your token is stored in an environment variable
 
 api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/"
-headers = {"Authorization": f"token {token}"}
+headers = {"Authorization": f"Bearer {token}"}  # Fix authorization header
 
 try:
     response = requests.get(api_url, headers=headers)
@@ -30,7 +30,7 @@ try:
 
         for filename, url in csv_files:
             st.write(f"Reading file: {filename}")
-            numeric_id = filename.split('-')[2]
+            numeric_id = filename.split('-')[2] if '-' in filename else 'Unknown'
             df = pd.read_csv(url)
             df['FileID'] = numeric_id
             dataframes.append(df)
