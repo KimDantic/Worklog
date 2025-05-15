@@ -1,13 +1,10 @@
-import os
-import requests
+import streamlit as st
 import pandas as pd
+import requests
+import os
+import matplotlib.pyplot as plt
 
-
-# Setup NLTK
-nltk.download('stopwords', quiet=True)
-nltk.download('wordnet', quiet=True)
-nltk.download('omw-1.4', quiet=True)
-nltk.download('punkt', quiet=True)
+st.title("GitHub CSV Data Visualizer")
 
 # GitHub repo details
 repo_owner = "romero220"
@@ -18,33 +15,49 @@ token = os.getenv("GITHUB_TOKEN")  # Ensure your token is stored in an environme
 api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/"
 headers = {"Authorization": f"token {token}"}
 
-response = requests.get(api_url, headers=headers)
-response.raise_for_status()
-files = response.json()
+try:
+    response = requests.get(api_url, headers=headers)
+    response.raise_for_status()
+    files = response.json()
 
-# Filter CSV files
-csv_files = [(file['name'], file['download_url']) for file in files if file['name'].endswith('.csv')]
+    # Filter CSV files
+    csv_files = [(file['name'], file['download_url']) for file in files if file['name'].endswith('.csv')]
 
-if not csv_files:
-    print("No CSV files found in the repository.")
-else:
-    print("CSV files found:")
-    dataframes = []
-
-    for filename, url in csv_files:
-        print(f"Reading file: {filename}")
-        numeric_id = filename.split('-')[2]
-        df = pd.read_csv(url)
-        df['FileID'] = numeric_id
-        dataframes.append(df)
-
-    combined_df = pd.concat(dataframes, ignore_index=True)
-
-    # Ensure columns exist
-    required_columns = ['Issue', 'Category']
-    if all(col in combined_df.columns for col in required_columns):
-        data = combined_df[required_columns].copy()
-        data.columns = ['text', 'label']
-        print("\nData loaded successfully.")
+    if not csv_files:
+        st.error("No CSV files found in the repository.")
     else:
-        print(f"Missing columns: {required_columns}")
+        dataframes = []
+
+        for filename, url in csv_files:
+            st.write(f"Reading file: {filename}")
+            numeric_id = filename.split('-')[2]
+            df = pd.read_csv(url)
+            df['FileID'] = numeric_id
+            dataframes.append(df)
+
+        combined_df = pd.concat(dataframes, ignore_index=True)
+
+        # Ensure columns exist
+        required_columns = ['Issue', 'Category']
+        if all(col in combined_df.columns for col in required_columns):
+            data = combined_df[required_columns].copy()
+            data.columns = ['text', 'label']
+
+            st.write("### Data Loaded Successfully")
+            st.dataframe(data)
+
+            # Visualization
+            st.write("### Data Visualization")
+            category_counts = data['label'].value_counts()
+            fig, ax = plt.subplots()
+            category_counts.plot(kind='bar', ax=ax)
+            ax.set_title('Category Distribution')
+            ax.set_xlabel('Category')
+            ax.set_ylabel('Count')
+            st.pyplot(fig)
+
+        else:
+            st.error(f"Missing columns: {required_columns}")
+
+except requests.exceptions.RequestException as e:
+    st.error(f"Error connecting to GitHub: {str(e)}")
