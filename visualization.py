@@ -24,6 +24,8 @@ st.set_page_config(page_title="Task Dashboard", layout="wide")
 
 # Theme toggle
 theme = st.sidebar.radio("Select Theme", ["Dark", "Light"], index=0)
+
+# Applying theme
 if theme == "Dark":
     st.markdown("<style>body {background-color: #121212; color: #FFFFFF;}</style>", unsafe_allow_html=True)
 else:
@@ -47,12 +49,10 @@ def load_data():
 
     combined_df = pd.concat(dataframes, ignore_index=True)
     combined_df['Full_Name'] = combined_df['user_first_name'].astype(str) + " " + combined_df['user_last_name'].astype(str)
-    combined_df['task_wo_punct'] = combined_df['task'].apply(lambda x: ''.join([char for char in str(x) if char not in string.punctuation]))
 
-    # Text preprocessing
     stopword = nltk.corpus.stopwords.words('english')
     lemmatizer = WordNetLemmatizer()
-    combined_df['task_processed'] = combined_df['task_wo_punct'].apply(lambda x: ' '.join([lemmatizer.lemmatize(word) for word in x.lower().split() if word not in stopword]))
+    combined_df['task_processed'] = combined_df['task'].astype(str).apply(lambda x: ' '.join([lemmatizer.lemmatize(word) for word in re.findall(r'\w+', x.lower()) if word not in stopword]))
 
     return combined_df
 
@@ -61,24 +61,24 @@ combined_df = load_data()
 
 # Sidebar filters
 st.sidebar.header("Filters")
-filter_type = st.sidebar.selectbox("Filter Type", ["Date", "Category", "Full Name", "Search Term"])
+filter_type = st.sidebar.multiselect("Filter Type", ["Date", "Category", "Full Name", "Search Term"], default=["Search Term"])
 
-if filter_type == "Date":
+if "Date" in filter_type:
     date_filter = st.sidebar.date_input("Select Date Range", [])
     if len(date_filter) == 2:
         combined_df = combined_df[(combined_df['started_at'] >= pd.to_datetime(date_filter[0])) & (combined_df['started_at'] <= pd.to_datetime(date_filter[1]))]
 
-elif filter_type == "Category":
+if "Category" in filter_type:
     search_term = st.sidebar.text_input("Search Category")
     if search_term:
         combined_df = combined_df[combined_df['task_processed'].str.contains(search_term, case=False)]
 
-elif filter_type == "Full Name":
+if "Full Name" in filter_type:
     full_name_filter = st.sidebar.multiselect("Filter by Full Name", options=combined_df['Full_Name'].unique())
     if full_name_filter:
         combined_df = combined_df[combined_df['Full_Name'].isin(full_name_filter)]
 
-elif filter_type == "Search Term":
+if "Search Term" in filter_type:
     search_term = st.sidebar.text_input("Search Task")
     if search_term:
         combined_df = combined_df[combined_df['task_processed'].str.contains(search_term, case=False)]
