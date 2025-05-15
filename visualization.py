@@ -62,6 +62,17 @@ filter_type = st.sidebar.multiselect("🔖 Select Filter Type", ["Date", "Catego
 st.sidebar.header("📊 Choose Analysis")
 analysis_type = st.sidebar.selectbox("Select Analysis Type", ["Word Cloud", "Tree Map", "Bar Chart", "Pie Chart"], index=0)
 
+# Enhanced Tabs for Visualization
+st.subheader("📊 Data Visualization")
+tab1, tab2 = st.tabs(["Word Cloud", "Common Words Visualization"])
 
+with tab1:
+    all_words = ' '.join(combined_df['task_processed'].tolist())
+    wordcloud = WordCloud(width=800, height=400, background_color='grey').generate(all_words)
+    st.image(wordcloud.to_array())
 
-
+with tab2:
+    word_counts = Counter(' '.join(combined_df['task_processed']).split()).most_common(20)
+    df_plot = pd.DataFrame(word_counts, columns=['Word', 'Count'])
+    fig = px.treemap(df_plot, path=['Word'], values='Count', title="Top 20 Most Common Words")
+    st.plotly_chart(fig)
