@@ -58,6 +58,10 @@ st.sidebar.header("🔍 Filter Options")
 st.sidebar.divider()
 filter_type = st.sidebar.multiselect("🔖 Select Filter Type", ["Date", "Category", "Full Name", "Search Term"], default=["Search Term"])
 
+# Choose Analysis
+st.sidebar.header("📊 Choose Analysis")
+analysis_type = st.sidebar.selectbox("Select Analysis Type", ["Word Cloud", "Tree Map", "Bar Chart", "Pie Chart"], index=0)
+
 # Enhanced Tabs for Visualization
 st.subheader("📊 Data Visualization")
 tab1, tab2 = st.tabs(["Word Cloud", "Common Words Visualization"])
