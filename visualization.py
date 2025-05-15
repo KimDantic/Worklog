@@ -1,42 +1,41 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from collections import Counter
-import matplotlib.pyplot as plt
-import seaborn as sns
 import os
 import warnings
-import string
-import re
 import nltk
-from nltk.stem import WordNetLemmatizer
 import plotly.express as px
+import plotly.graph_objects as go
+from nltk.stem import WordNetLemmatizer
 
-# Ensure NLTK resources are downloaded
+# NLTK downloads
 nltk.download('stopwords')
 nltk.download('wordnet')
 
 warnings.filterwarnings("ignore", message="Converting to PeriodArray/Index representation will drop timezone information")
 
-# Streamlit page configuration
+# Streamlit config
 st.set_page_config(page_title="Task Dashboard", layout="wide")
 
-# Apply custom CSS for black background
+# Custom dark theme
 st.markdown(
     """
     <style>
-    body {background-color: #000000; color: #FFFFFF;}
-    .stSidebar {background-color: #000000; color: #FFFFFF;} /* Sidebar background and text */
-    .stTabs > div {background-color: #000000; color: #FFFFFF;}
-    .stMarkdown {color: #FFFFFF;}
-    .css-18e3th9 {background-color: #000000; color: #FFFFFF;} /* Main content background */
-    .st-bb {background-color: #000000; color: #FFFFFF;}
-    .st-b7 {color: #FFFFFF;}
+    body, .stApp {
+        background-color: #0e1117;
+        color: #ffffff;
+    }
+    .stSidebar {
+        background-color: #0e1117;
+    }
+    .css-1v3fvcr, .css-18e3th9 {
+        background-color: #0e1117;
+    }
     div[data-baseweb="tab"] > div[role="tablist"] > button[role="tab"] {
         color: #FFFFFF;
     }
-    div[data-baseweb="tab"] > div[role="tablist"] > button[role="tab"][aria-selected="true"]{
-        color: #FFFFFF;
+    div[data-baseweb="tab"] > div[role="tablist"] > button[role="tab"][aria-selected="true"] {
+        color: #1E90FF;
     }
     </style>
     """,
@@ -46,63 +45,114 @@ st.markdown(
 # Load data
 @st.cache_data
 def load_data():
-    csv_files = [file for file in os.listdir('.') if file.endswith('.csv')]
-
+    csv_files = [f for f in os.listdir('.') if f.endswith('.csv')]
     if not csv_files:
-        print("No CSV files found in the repository.")
         return pd.DataFrame()
-
     dataframes = []
-    for filename in csv_files:
-        df = pd.read_csv(filename)
-        numeric_id = filename.split('-')[2] if '-' in filename else 'Unknown'
-        df['ProjectID'] = numeric_id
+    for file in csv_files:
+        df = pd.read_csv(file)
+        project_id = file.split('-')[2] if '-' in file else 'Unknown'
+        df['ProjectID'] = project_id
         dataframes.append(df)
+    combined = pd.concat(dataframes, ignore_index=True)
+    combined['ProjectID-ID'] = combined['ProjectID'].astype(str) + "-" + combined['id'].astype(str)
+    combined['Full_Name'] = combined['user_first_name'].astype(str) + " " + combined['user_last_name'].astype(str)
+    return combined
 
-    combined_df = pd.concat(dataframes, ignore_index=True)
-
-    combined_df['ProjectID-ID'] = combined_df['ProjectID'].astype(str) + "-" + combined_df['id'].astype(str)
-    combined_df['Full_Name'] = combined_df['user_first_name'].astype(str) + " " + combined_df['user_last_name'].astype(str)
-
-    return combined_df
-
-# Load the data
-combined_df = load_data()
-
-# Sidebar filters
+# Load and filter data
+df = load_data()
 st.sidebar.header("Filters")
-categories = st.sidebar.multiselect("Select Categories", options=combined_df['Categorized'].explode().unique())
 
-# Tabs for graphs
-tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(["Overview", "Hours", "Entries", "4", "5", "6", "7"])
+if 'Categorized' in df.columns:
+    categories = st.sidebar.multiselect("Select Categories", options=df['Categorized'].dropna().unique())
+    if categories:
+        df = df[df['Categorized'].isin(categories)]
 
-# Tab 1: Overview
+# Tabs
+tab1, tab2, tab3 = st.tabs(["📊 Overview", "⏱️ Hours", "🧠 Insights"])
+
+# --- Tab 1: Overview ---
 with tab1:
-    st.subheader("Preview of Filtered Data (First 100 Rows)")
-    st.dataframe(combined_df.head(100), use_container_width=True)
+    st.subheader("📌 Preview of Filtered Data (First 100 Rows)")
+    st.dataframe(df.head(100), use_container_width=True)
 
-    # Additional Bar Graph
-    st.subheader("User Task Count Visualization")
-    user_task_counts = combined_df['Full_Name'].value_counts().reset_index()
+    # --- Bar Chart: Task Count by User ---
+    st.subheader("👤 Task Count by User")
+    user_task_counts = df['Full_Name'].value_counts().reset_index()
     user_task_counts.columns = ['Full_Name', 'Task Count']
 
-    fig_bar = px.bar(
+    fig1 = px.bar(
         user_task_counts,
         x='Full_Name',
         y='Task Count',
         color='Task Count',
-        color_continuous_scale='Blues',
-        title="Task Count by User"
+        color_continuous_scale='blues',
+        title="Tasks per User"
     )
-
-    fig_bar.update_layout(
-        plot_bgcolor='#000000',
-        paper_bgcolor='#000000',
-        font_color='#FFFFFF',
-        xaxis_title='Users',
-        yaxis_title='Task Count',
-        title_font_size=18,
+    fig1.update_layout(
+        plot_bgcolor='#0e1117',
+        paper_bgcolor='#0e1117',
+        font_color='white',
+        xaxis_title='User',
+        yaxis_title='Number of Tasks',
         title_x=0.5
     )
+    st.plotly_chart(fig1, use_container_width=True)
 
-    st.plotly_chart(fig_bar, use_container_width=True)
+    # --- Pie Chart: Task Distribution by Category ---
+    if 'Categorized' in df.columns:
+        st.subheader("📘 Task Distribution by Category")
+        cat_counts = df['Categorized'].value_counts().reset_index()
+        cat_counts.columns = ['Category', 'Count']
+        fig2 = px.pie(cat_counts, names='Category', values='Count', title="Tasks per Category", hole=0.4)
+        fig2.update_traces(textinfo='percent+label')
+        fig2.update_layout(paper_bgcolor='#0e1117', font_color='white', title_x=0.5)
+        st.plotly_chart(fig2, use_container_width=True)
+
+# --- Tab 2: Hours ---
+with tab2:
+    if 'hours' in df.columns and 'Full_Name' in df.columns:
+        st.subheader("⏱️ Total Hours per User")
+        hours_df = df.groupby('Full_Name')['hours'].sum().reset_index()
+        fig3 = px.bar(
+            hours_df,
+            x='Full_Name',
+            y='hours',
+            color='hours',
+            color_continuous_scale='viridis',
+            title='Total Logged Hours by User'
+        )
+        fig3.update_layout(
+            plot_bgcolor='#0e1117',
+            paper_bgcolor='#0e1117',
+            font_color='white',
+            xaxis_title='User',
+            yaxis_title='Total Hours',
+            title_x=0.5
+        )
+        st.plotly_chart(fig3, use_container_width=True)
+    else:
+        st.warning("No 'hours' column found in the dataset.")
+
+# --- Tab 3: Insights ---
+with tab3:
+    st.subheader("🔍 Correlation Heatmap (Numerical Features)")
+    if not df.select_dtypes(include='number').empty:
+        corr = df.select_dtypes(include='number').corr()
+        fig4 = px.imshow(corr, text_auto=True, color_continuous_scale='deep', title="Correlation Matrix")
+        fig4.update_layout(
+            plot_bgcolor='#0e1117',
+            paper_bgcolor='#0e1117',
+            font_color='white',
+            title_x=0.5
+        )
+        st.plotly_chart(fig4, use_container_width=True)
+
+    # Optional Sunburst for hierarchy
+    if {'Categorized', 'Full_Name'}.issubset(df.columns):
+        st.subheader("🌐 Task Hierarchy (User → Category)")
+        sunburst_data = df.groupby(['Full_Name', 'Categorized']).size().reset_index(name='Count')
+        fig5 = px.sunburst(sunburst_data, path=['Full_Name', 'Categorized'], values='Count',
+                           color='Count', color_continuous_scale='plasma', title="User & Task Category Breakdown")
+        fig5.update_layout(paper_bgcolor='#0e1117', font_color='white', title_x=0.5)
+        st.plotly_chart(fig5, use_container_width=True)
