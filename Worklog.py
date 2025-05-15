@@ -2,7 +2,12 @@ import streamlit as st
 import pandas as pd
 import requests
 import os
-import matplotlib.pyplot as plt
+
+# Attempting to import matplotlib, handling if not installed
+try:
+    import matplotlib.pyplot as plt
+except ImportError:
+    st.error("Matplotlib is not installed. Run: pip install matplotlib")
 
 st.title("GitHub CSV Data Visualizer")
 
@@ -13,7 +18,7 @@ branch = "main"
 token = os.getenv("GITHUB_TOKEN")  # Ensure your token is stored in an environment variable
 
 api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/"
-headers = {"Authorization": f"Bearer {token}"}  # Fix authorization header
+headers = {"Authorization": f"Bearer {token}"}
 
 try:
     response = requests.get(api_url, headers=headers)
@@ -47,14 +52,17 @@ try:
             st.dataframe(data)
 
             # Visualization
-            st.write("### Data Visualization")
-            category_counts = data['label'].value_counts()
-            fig, ax = plt.subplots()
-            category_counts.plot(kind='bar', ax=ax)
-            ax.set_title('Category Distribution')
-            ax.set_xlabel('Category')
-            ax.set_ylabel('Count')
-            st.pyplot(fig)
+            if 'plt' in globals():
+                st.write("### Data Visualization")
+                category_counts = data['label'].value_counts()
+                fig, ax = plt.subplots()
+                category_counts.plot(kind='bar', ax=ax)
+                ax.set_title('Category Distribution')
+                ax.set_xlabel('Category')
+                ax.set_ylabel('Count')
+                st.pyplot(fig)
+            else:
+                st.error("Matplotlib is not available for visualization.")
 
         else:
             st.error(f"Missing columns: {required_columns}")
