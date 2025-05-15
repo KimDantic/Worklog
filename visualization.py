@@ -22,8 +22,8 @@ warnings.filterwarnings("ignore", message="Converting to PeriodArray/Index repre
 # Streamlit page configuration
 st.set_page_config(page_title="Task Dashboard", layout="wide")
 
-# Applying dark theme directly
-st.markdown("<style>body {background-color: #121212; color: #FFFFFF;}</style>", unsafe_allow_html=True)
+# Applying grey theme directly
+st.markdown("<style>body {background-color: #2E2E2E; color: #FFFFFF;}</style>", unsafe_allow_html=True)
 
 # Load data
 @st.cache_data
@@ -68,7 +68,7 @@ tab1, tab2 = st.tabs(["Word Cloud", "Common Words Visualization"])
 
 with tab1:
     all_words = ' '.join(combined_df['task_processed'].tolist())
-    wordcloud = WordCloud(width=800, height=400, background_color='black').generate(all_words)
+    wordcloud = WordCloud(width=800, height=400, background_color='grey').generate(all_words)
     st.image(wordcloud.to_array())
 
 with tab2:
