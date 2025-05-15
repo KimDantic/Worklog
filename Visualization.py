@@ -255,10 +255,11 @@ with tab4:
         grouped_data = filtered_data.groupby([time_col_tab4, 'Full_Name'], as_index=False).size().rename(columns={'size': 'Entry_Count'})
 
     fig = px.bar(
-        grouped_data,
-        x=time_col_tab4,
-        y='Entry_Count',
-        color='Full_Name',
-        barmode='group',
-        title=f"Task Entries Over Time by {time_option_tab4}",
-        labels={time_col_tab
+    grouped_data,
+    x=time_col_tab4,
+    y='Entry_Count',
+    color='Full_Name',
+    barmode='group',
+    title=f"Task Entries Over Time by {time_option_tab4}",
+    labels={time_col_tab4: time_option_tab4, 'Entry_Count': 'Task Entries', 'Full_Name': 'User'}
+)
